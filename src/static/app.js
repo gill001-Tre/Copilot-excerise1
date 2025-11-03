@@ -12,6 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      // Reset activity select options (keep placeholder if present)
+      if (activitySelect) {
+        activitySelect.innerHTML = '<option value="" disabled selected>Select an activity</option>';
+      }
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -20,12 +24,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
-        activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
-          <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
-        `;
+        // Basic info block (use textContent where appropriate to avoid XSS)
+        const title = document.createElement("h4");
+        title.textContent = name;
+
+        const desc = document.createElement("p");
+        desc.textContent = details.description;
+
+        const schedule = document.createElement("p");
+        schedule.innerHTML = `<strong>Schedule:</strong> ${details.schedule}`;
+
+        const availability = document.createElement("p");
+        availability.innerHTML = `<strong>Availability:</strong> ${spotsLeft} spots left`;
+
+        activityCard.appendChild(title);
+        activityCard.appendChild(desc);
+        activityCard.appendChild(schedule);
+        activityCard.appendChild(availability);
+
+        // Participants section (build elements to avoid injecting raw HTML)
+        const participantsWrapper = document.createElement("div");
+        participantsWrapper.className = "participants";
+
+        const participantsHeading = document.createElement("h5");
+        participantsHeading.textContent = "Participants";
+        participantsWrapper.appendChild(participantsHeading);
+
+        const participantsList = document.createElement("ul");
+        participantsList.className = "participants-list";
+
+        if (Array.isArray(details.participants) && details.participants.length > 0) {
+          details.participants.forEach((p) => {
+            const li = document.createElement("li");
+            li.className = "participant-pill";
+            li.textContent = p;
+            participantsList.appendChild(li);
+          });
+        } else {
+          const empty = document.createElement("p");
+          empty.className = "info small muted";
+          empty.textContent = "No participants yet — be the first to sign up!";
+          participantsWrapper.appendChild(empty);
+        }
+
+        participantsWrapper.appendChild(participantsList);
+        activityCard.appendChild(participantsWrapper);
 
         activitiesList.appendChild(activityCard);
 
