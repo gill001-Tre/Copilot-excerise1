@@ -57,7 +57,52 @@ document.addEventListener("DOMContentLoaded", () => {
           details.participants.forEach((p) => {
             const li = document.createElement("li");
             li.className = "participant-pill";
-            li.textContent = p;
+            
+            const participantText = document.createElement("span");
+            participantText.textContent = p;
+            li.appendChild(participantText);
+            
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-participant";
+            deleteBtn.innerHTML = "×";
+            deleteBtn.title = "Remove participant";
+            deleteBtn.setAttribute("aria-label", "Remove participant");
+            
+            // Add click handler for unregistering
+            deleteBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: "POST" }
+                );
+                
+                if (response.ok) {
+                  // Remove the participant pill if successful
+                  li.remove();
+                  // Show success message
+                  messageDiv.textContent = "Participant removed successfully";
+                  messageDiv.className = "success";
+                  messageDiv.classList.remove("hidden");
+                  // Refresh the activities list
+                  fetchActivities();
+                } else {
+                  const error = await response.json();
+                  throw new Error(error.detail || "Failed to remove participant");
+                }
+              } catch (error) {
+                messageDiv.textContent = error.message || "Failed to remove participant";
+                messageDiv.className = "error";
+                messageDiv.classList.remove("hidden");
+              }
+              
+              // Hide message after 5 seconds
+              setTimeout(() => {
+                messageDiv.classList.add("hidden");
+              }, 5000);
+            });
+            
+            li.appendChild(deleteBtn);
             participantsList.appendChild(li);
           });
         } else {
